@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+  <meta name="theme-color" content="#161008"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Mind OS"/>
+  <title>Umami Mind OS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:#0F0C06; --bg-deep:#080600; --bg-card:#181208;
+      --gold:#FFD46B; --gold-mid:#E8B84B; --gold-dim:#C8A050; --gold-dk:#3A2A10;
+      --gold-glow:rgba(255,212,107,0.14);
+      --green:#8FD46B; --green-bg:#091408; --green-mid:#58A842; --green-dk:#2A6018;
+      --red:#E87060; --red-bg:#140806; --red-mid:#C05040; --red-dk:#6A2818;
+      --amber:#F0A040; --amber-bg:rgba(240,160,64,0.08);
+      --text:#F0E0A8; --text-dim:#B09060;
+      --mono:'Courier Prime',monospace; --serif:'Cormorant Garamond',Georgia,serif;
+      --r:10px;
+    }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+    html,body{height:100%;background:#0F0C06;color:#F0E0A8;font-family:var(--serif);overscroll-behavior:none;}
+    body{min-height:100vh;min-height:-webkit-fill-available;background:#0F0C06;}
+    #app{max-width:480px;margin:0 auto;min-height:100vh;min-height:-webkit-fill-available;
+      display:flex;flex-direction:column;
+      padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);}
+
+    /* TOPBAR — sticky, always shows phase pill */
+    .topbar{
+      display:flex;justify-content:space-between;align-items:center;
+      padding:16px 20px 12px;border-bottom:1px solid var(--gold-dk);
+      background:#0F0C06;border-bottom:1px solid #2A1E0A;
+      position:sticky;top:0;z-index:30;
+    }
+    .brand{display:flex;flex-direction:column;}
+    .brand-tag{font-size:9px;letter-spacing:5px;color:var(--gold-dim);text-transform:uppercase;margin-bottom:1px;}
+    .brand-name{font-size:19px;color:var(--gold);font-weight:300;letter-spacing:2px;}
+    .top-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+    /* Phase pill — always visible in topbar */
+    .phase-pill{
+      display:flex;gap:1px;border-radius:20px;overflow:hidden;
+      border:1px solid var(--gold-dk);
+    }
+    .pp-btn{
+      padding:5px 10px;background:transparent;border:none;
+      color:var(--gold-dim);font-size:11px;font-family:var(--serif);
+      cursor:pointer;letter-spacing:0.5px;transition:all 0.2s;
+    }
+    .pp-btn.active-Low    {background:#5A3A18;color:#F0B868;text-shadow:0 0 8px rgba(240,184,104,0.5);}
+    .pp-btn.active-Neutral{background:#3A2A08;color:var(--gold);}
+    .pp-btn.active-High   {background:#2A2004;color:var(--gold);text-shadow:0 0 8px rgba(255,212,107,0.6);}
+    .metrics-row{display:flex;gap:10px;}
+    .m-p{font-family:var(--mono);font-size:12px;color:var(--green);text-shadow:0 0 8px rgba(143,212,107,0.4);}
+    .m-r{font-family:var(--mono);font-size:12px;color:var(--red);text-shadow:0 0 8px rgba(232,112,96,0.4);}
+
+    /* PHASE BANNER — contextual, below topbar */
+    .phase-banner{
+      padding:10px 20px;border-bottom:1px solid var(--gold-dk);
+      transition:all 0.3s;
+    }
+    .pb-low    {background:rgba(232,112,96,0.07);}
+    .pb-neutral{background:rgba(255,212,107,0.04);}
+    .pb-high   {background:rgba(143,212,107,0.07);}
+    .pb-text{font-size:13px;line-height:1.5;}
+    .pb-low    .pb-text{color:var(--red);}
+    .pb-neutral .pb-text{color:var(--gold-dim);}
+    .pb-high   .pb-text{color:var(--green-mid);}
+
+    /* QUICK LOG */
+    .quick-bar{
+      display:flex;align-items:center;gap:8px;
+      padding:9px 20px;border-bottom:1px solid var(--gold-dk);
+      background:#0F0C06;
+    }
+    .quick-label{font-size:9px;letter-spacing:3px;color:var(--gold-dim);text-transform:uppercase;white-space:nowrap;font-family:var(--mono);}
+    .quick-chips{display:flex;gap:5px;overflow-x:auto;flex:1;scrollbar-width:none;}
+    .quick-chips::-webkit-scrollbar{display:none;}
+    .qchip{flex-shrink:0;padding:5px 11px;border-radius:14px;border:1px solid var(--gold-dk);background:transparent;color:var(--gold-dim);font-size:12px;font-family:var(--serif);cursor:pointer;white-space:nowrap;transition:all 0.15s;}
+    .qchip.active{background:rgba(255,212,107,0.15);border-color:var(--gold-mid);color:var(--gold);box-shadow:0 0 8px rgba(255,212,107,0.2);}
+    .ql-btn{flex-shrink:0;padding:6px 12px;border-radius:7px;background:var(--gold-dk);border:none;color:var(--gold-dim);font-size:9px;font-family:var(--mono);letter-spacing:1px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+    .ql-btn.ready{background:linear-gradient(135deg,var(--gold-dim),var(--gold-mid));color:#1A1000;font-weight:700;box-shadow:0 2px 12px rgba(255,212,107,0.3);}
+
+    /* MAIN */
+    .main{flex:1;padding:20px 20px 0;display:flex;flex-direction:column;}
+    .stage{animation:fadeUp 0.2s ease both;}
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Step track */
+    .step-track{display:flex;gap:4px;margin-bottom:16px;}
+    .sdot{flex:1;height:2px;border-radius:2px;background:var(--gold-dk);transition:all 0.3s;}
+    .sdot.done{background:var(--gold-dim);}
+    .sdot.active{background:var(--gold);box-shadow:0 0 6px rgba(255,212,107,0.5);}
+
+    .s-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;margin-bottom:11px;}
+    .sl-gold{color:var(--gold-dim);} .sl-green{color:var(--green-mid);} .sl-red{color:var(--red-mid);} .sl-amber{color:var(--amber);}
+
+    /* Inputs */
+    textarea,input[type=text]{
+      width:100%;background:var(--bg-deep);border:1px solid var(--gold-dk);border-radius:var(--r);
+      padding:13px 15px;color:#1A1000;font-family:var(--serif);font-weight:500;line-height:1.6;background:#EDE0BC;
+      resize:none;outline:none;-webkit-appearance:none;
+      transition:border-color 0.25s,box-shadow 0.25s;
+    }
+    textarea{font-size:17px;}
+    input[type=text]{font-size:15px;}
+    textarea:focus,input[type=text]:focus{border-color:var(--gold-dim);box-shadow:0 0 0 3px var(--gold-glow);}
+    textarea::placeholder,input[type=text]::placeholder{color:#8A7050;font-style:italic;}
+
+    /* Event field emphasis */
+    .event-label{font-size:13px;color:var(--gold-mid);margin-bottom:8px;font-style:italic;}
+
+    /* Thought card */
+    .tc{border-radius:var(--r);padding:15px 17px;font-size:16px;line-height:1.7;font-style:italic;margin-bottom:14px;}
+    .tc-n{background:var(--bg-deep);border:1px solid var(--gold-dk);color:var(--gold-mid);}
+    .tc-g{background:var(--green-bg);border:1px solid #3A6828;color:#6AB858;text-align:center;}
+    .tc-r{background:var(--red-bg);border:1px solid var(--red-dk);color:var(--red);text-align:center;}
+
+    /* Chips */
+    .chip-group{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px;}
+    .chip{padding:8px 14px;border-radius:19px;border:1px solid var(--gold-dk);background:transparent;color:var(--gold-dim);font-size:14px;font-family:var(--serif);cursor:pointer;letter-spacing:0.5px;transition:all 0.16s;}
+    .chip.s-trig{background:rgba(255,212,107,0.15);border-color:var(--gold-mid);color:var(--gold);box-shadow:0 0 10px rgba(255,212,107,0.2);}
+    .chip.s-urge{background:rgba(240,160,64,0.15);border-color:var(--amber);color:var(--amber);}
+    .chip.s-caught{background:rgba(143,212,107,0.15);border-color:var(--green);color:var(--green);}
+    .chip.s-acted{background:rgba(232,112,96,0.15);border-color:var(--red);color:var(--red);}
+    .chip.s-mild{background:rgba(160,116,56,0.15);border-color:var(--gold-dim);color:var(--gold-dim);}
+    .chip.s-strong{background:rgba(232,184,75,0.18);border-color:var(--gold-mid);color:var(--gold);}
+    .chip.s-overwhelm{background:rgba(232,112,96,0.18);border-color:var(--red);color:var(--red);}
+
+    /* Buttons */
+    .btn{width:100%;padding:14px;border:none;border-radius:var(--r);font-size:12px;font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;cursor:pointer;transition:all 0.2s;-webkit-appearance:none;}
+    .btn-gold{background:linear-gradient(135deg,var(--gold-mid),var(--gold));color:#160E00;font-weight:700;box-shadow:0 4px 20px rgba(255,212,107,0.3);}
+    .btn-gold:disabled{background:#281E08;color:#4A3818;cursor:default;box-shadow:none;}
+    .btn-green{background:linear-gradient(135deg,var(--green-dk),var(--green));color:#061006;font-weight:700;box-shadow:0 4px 20px rgba(143,212,107,0.3);}
+    .btn-red{background:rgba(232,112,96,0.1);border:1.5px solid var(--red);color:var(--red);}
+    .btn-ghost{background:transparent;border:1px solid var(--gold-dk);color:var(--gold-dim);}
+    .btn-amber{background:rgba(240,160,64,0.12);border:1.5px solid var(--amber);color:var(--amber);}
+    .btn-c{background:rgba(143,212,107,0.1);border:1.5px solid var(--green);color:var(--green);font-weight:700;}
+    .btn-d{background:rgba(232,112,96,0.1);border:1.5px solid var(--red);color:var(--red);font-weight:700;}
+    .btn-row{display:flex;gap:10px;} .btn-row .btn{flex:1;}
+    .btn-sm{font-size:11px;padding:10px;letter-spacing:1px;}
+
+    /* RULE CARD — phase-aware */
+    .rule-card{border-radius:var(--r);padding:16px 18px;margin-bottom:14px;}
+    .rule-card.phase-low    {background:rgba(232,112,96,0.07);border:1.5px solid var(--red-dk);}
+    .rule-card.phase-neutral{background:var(--amber-bg);border:1.5px solid rgba(240,160,64,0.3);}
+    .rule-card.phase-high   {background:rgba(143,212,107,0.06);border:1.5px solid var(--green-dk);}
+    .rule-phase-badge{display:inline-block;font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:var(--mono);padding:3px 8px;border-radius:9px;margin-bottom:8px;}
+    .rule-phase-badge.low    {background:rgba(232,112,96,0.15);color:var(--red);}
+    .rule-phase-badge.neutral{background:rgba(240,160,64,0.15);color:var(--amber);}
+    .rule-phase-badge.high   {background:rgba(143,212,107,0.15);color:var(--green-mid);}
+    .rule-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dim);font-family:var(--mono);margin-bottom:7px;}
+    .rule-main{font-size:17px;color:var(--text);line-height:1.6;margin-bottom:7px;}
+    .rule-urge-line{font-size:14px;color:var(--amber);margin-bottom:7px;font-style:italic;}
+    .rule-action{font-size:14px;color:var(--gold-mid);font-style:italic;}
+
+    /* DELAY TIMER — primary in Low phase */
+    .delay-primary{
+      border-radius:var(--r);padding:20px;margin-bottom:14px;
+      background:rgba(232,112,96,0.08);border:2px solid var(--red);
+      text-align:center;
+    }
+    .delay-primary .delay-label-top{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--red-mid);font-family:var(--mono);margin-bottom:10px;}
+    .delay-count{font-size:44px;font-family:var(--mono);color:var(--red);text-shadow:0 0 24px rgba(232,112,96,0.5);margin-bottom:4px;letter-spacing:2px;}
+    .delay-sub{font-size:11px;color:var(--red-dk);letter-spacing:2px;font-family:var(--mono);text-transform:uppercase;}
+    .delay-complete{border-radius:var(--r);padding:16px;margin-bottom:14px;background:rgba(143,212,107,0.07);border:1.5px solid var(--green-dk);text-align:center;}
+    .delay-complete-text{font-size:14px;color:var(--green-mid);margin-bottom:12px;line-height:1.6;}
+    .delay-reassess-row{display:flex;gap:8px;}
+
+    /* Dots */
+    .dots{display:flex;gap:10px;justify-content:center;margin:12px 0 16px;}
+    .dot{width:10px;height:10px;border-radius:50%;background:#281E08;transition:all 0.3s;}
+    .dot.filled{background:var(--green);box-shadow:0 0 10px rgba(143,212,107,0.7);transform:scale(1.25);}
+    .repeat-hint{font-size:14px;color:var(--green-mid);text-align:center;margin-bottom:5px;font-style:italic;}
+    .release-note{font-size:14px;color:var(--red-mid);text-align:center;margin-bottom:5px;}
+    .release-sub{font-size:12px;color:#8A5040;text-align:center;margin-bottom:18px;}
+
+    /* Logged */
+    .logged-wrap{text-align:center;padding-top:6px;}
+    .logged-icon{width:60px;height:60px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 13px;font-size:26px;}
+    .logged-title{font-size:18px;color:var(--gold-mid);margin-bottom:5px;font-weight:300;}
+    .logged-sub{font-size:13px;color:var(--gold-dim);margin-bottom:18px;font-style:italic;line-height:1.7;}
+    .meta-strip{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;margin-bottom:18px;}
+    .mc{padding:4px 10px;border-radius:12px;font-size:11px;font-family:var(--mono);letter-spacing:1px;}
+    .mc-t{background:rgba(255,212,107,0.1);color:var(--gold-mid);border:1px solid var(--gold-dk);}
+    .mc-u{background:rgba(240,160,64,0.1);color:var(--amber);border:1px solid rgba(240,160,64,0.3);}
+    .mc-c{background:rgba(143,212,107,0.1);color:var(--green-mid);border:1px solid var(--green-dk);}
+    .mc-a{background:rgba(232,112,96,0.1);color:var(--red-mid);border:1px solid var(--red-dk);}
+    .mc-i{background:rgba(255,255,255,0.04);color:var(--text-dim);border:1px solid var(--gold-dk);}
+
+    /* Deferred outcome prompt */
+    .deferred-card{
+      border-radius:var(--r);padding:14px 16px;
+      background:rgba(240,160,64,0.07);border:1.5px solid rgba(240,160,64,0.35);
+      margin-bottom:14px;animation:fadeUp 0.2s ease;
+    }
+    .deferred-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--amber);font-family:var(--mono);margin-bottom:7px;}
+    .deferred-text{font-size:14px;color:var(--text);margin-bottom:10px;line-height:1.6;}
+    .deferred-row{display:flex;gap:8px;}
+
+    /* SKIP */
+    /* AROSE BUTTONS */
+    .arose-btn{
+      padding:9px 16px;border-radius:20px;
+      border:1px solid #3A2A10;background:transparent;
+      color:#7A6040;font-size:14px;font-family:var(--serif);
+      cursor:pointer;letter-spacing:0.5px;transition:all 0.18s;
+      flex-shrink:0;
+    }
+    .arose-btn.active-thought  {border-color:var(--gold-mid);background:rgba(255,212,107,0.12);color:var(--gold);}
+    .arose-btn.active-sensation{border-color:#4A8AB0;background:rgba(74,138,176,0.15);color:#5A9AC0;}
+    .arose-btn.active-emotion  {border-color:var(--red);background:rgba(232,112,96,0.12);color:var(--red);}
+    .arose-btn.active-urge     {border-color:var(--amber);background:rgba(240,160,64,0.12);color:var(--amber);}
+    .arose-field-wrap{
+      border-radius:var(--r);padding:12px 14px;margin-bottom:10px;
+      animation:fadeUp 0.18s ease;
+    }
+    .arose-field-wrap.fw-thought  {background:rgba(255,212,107,0.05);border:1px solid #3A2A10;}
+    .arose-field-wrap.fw-sensation{background:rgba(74,138,176,0.07);border:1px solid #1A3040;}
+    .arose-field-wrap.fw-emotion  {background:rgba(232,112,96,0.05);border:1px solid #4A2018;}
+    .arose-field-wrap.fw-urge     {background:rgba(240,160,64,0.05);border:1px solid #4A3010;}
+    .arose-field-label{font-size:9px;letter-spacing:3px;text-transform:uppercase;font-family:var(--mono);margin-bottom:8px;}
+    .afl-thought  {color:var(--gold-dim);}
+    .afl-sensation{color:#4A8AB0;}
+    .afl-emotion  {color:var(--red-mid);}
+    .afl-urge     {color:var(--amber);}
+    .arose-field-wrap textarea{font-size:15px;background:#EDE0BC;border:1px solid #C8A050;padding:8px;border-radius:6px;box-shadow:none;color:#1A1000;font-weight:500;}
+    .arose-field-wrap textarea:focus{border-color:transparent;box-shadow:none;}
+
+    .skip{text-align:center;color:#4A3518;font-size:10px;font-family:var(--mono);letter-spacing:2px;text-transform:uppercase;cursor:pointer;padding:9px 0;transition:color 0.2s;}
+    .skip:active{color:var(--gold-dim);}
+
+    /* PATTERNS */
+    .patterns-section{padding:10px 20px 0;border-top:1px solid var(--gold-dk);margin-top:8px;}
+    .pat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+    .pat-title{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);font-family:var(--mono);}
+    .copy-btn{background:none;border:1px solid var(--gold-dk);border-radius:5px;color:var(--gold-dim);font-size:9px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-family:var(--mono);padding:5px 10px;transition:all 0.2s;}
+    .copy-btn.done{color:var(--green);border-color:var(--green-dk);}
+    .pat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;}
+    .pat-card{background:#0A0800;border:1px solid #2A1E08;border-radius:8px;padding:8px 11px;}
+    .pat-card-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dim);font-family:var(--mono);margin-bottom:5px;}
+    .pat-card-value{font-size:15px;color:var(--text);font-weight:400;}
+    .pat-card-sub{font-size:10px;color:var(--gold-dim);margin-top:1px;font-family:var(--mono);}
+    .pat-insight{background:rgba(255,212,107,0.05);border:1px solid var(--gold-dk);border-radius:8px;padding:11px 13px;margin-bottom:10px;}
+    .pat-insight-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold-dim);font-family:var(--mono);margin-bottom:5px;}
+    .pat-insight-text{font-size:14px;color:var(--gold-mid);line-height:1.6;font-style:italic;}
+    .risk-window{background:rgba(232,112,96,0.05);border:1px solid var(--red-dk);border-radius:8px;padding:11px 13px;margin-bottom:10px;}
+    .risk-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--red-mid);font-family:var(--mono);margin-bottom:5px;}
+    .risk-text{font-size:14px;color:var(--red);line-height:1.6;}
+
+    /* History */
+    .hist-toggle{display:flex;justify-content:center;padding:8px 20px 0;cursor:pointer;}
+    .hist-toggle-btn{background:none;border:none;color:var(--gold-dk);font-size:9px;letter-spacing:3px;text-transform:uppercase;font-family:var(--mono);cursor:pointer;transition:color 0.2s;}
+    .history-list{padding:8px 20px 0;display:flex;flex-direction:column;gap:6px;}
+    .h-entry{border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;}
+    .h-entry-c{background:var(--green-bg);border:1px solid #2A4818;}
+    .h-entry-d{background:var(--red-bg);border:1px solid #4A2018;}
+    .h-entry-q{background:rgba(255,212,107,0.04);border:1px solid var(--gold-dk);}
+    .h-top{display:flex;gap:8px;align-items:flex-start;}
+    .h-time{font-family:var(--mono);font-size:10px;min-width:36px;padding-top:1px;}
+    .h-time-c{color:var(--green-mid);} .h-time-d{color:var(--red-mid);} .h-time-q{color:var(--gold-dim);}
+    .h-type{font-family:var(--mono);font-size:10px;font-weight:700;padding-top:1px;}
+    .h-type-c{color:var(--green);} .h-type-d{color:var(--red);} .h-type-q{color:var(--gold-dim);}
+    .h-text{flex:1;font-size:13px;font-style:italic;line-height:1.5;}
+    .h-text-c{color:#5AAA48;} .h-text-d{color:var(--red);} .h-text-q{color:var(--gold-dim);}
+    .h-phase{font-size:9px;color:#4A3518;font-family:var(--mono);}
+    .h-meta{display:flex;gap:4px;flex-wrap:wrap;padding-left:44px;}
+    .h-tag{font-size:9px;font-family:var(--mono);letter-spacing:1px;padding:2px 6px;border-radius:8px;}
+    .ht-t{background:rgba(255,212,107,0.07);color:var(--gold-dim);}
+    .ht-u{background:rgba(240,160,64,0.07);color:#8A6030;}
+    .ht-c{background:rgba(143,212,107,0.07);color:var(--green-dk);}
+    .ht-a{background:rgba(232,112,96,0.07);color:var(--red-dk);}
+    .ht-i{background:rgba(255,255,255,0.03);color:#5A4830;}
+    .ht-pending{background:rgba(240,160,64,0.1);color:var(--amber);}
+
+    .spacer{height:36px;}
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOPBAR: always shows phase + metrics -->
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-tag">Umami</div>
+      <div class="brand-name">Mind OS</div>
+    </div>
+    <div class="top-right">
+      <div class="phase-pill" id="phase-pill"></div>
+      <div class="metrics-row">
+        <span class="m-p" id="m-p">✓ 0</span>
+        <span class="m-r" id="m-r">✗ 0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE BANNER -->
+  <div class="phase-banner" id="phase-banner">
+    <div class="pb-text" id="pb-text"></div>
+  </div>
+
+  <!-- QUICK LOG -->
+  <div class="quick-bar">
+    <span class="quick-label">Quick</span>
+    <div class="quick-chips" id="quick-chips"></div>
+    <button class="ql-btn" id="ql-btn" onclick="quickLog()">Log</button>
+  </div>
+
+  <!-- DEFERRED OUTCOME PROMPT (hidden until needed) -->
+  <div id="deferred-zone" style="padding:0 20px;"></div>
+
+  <!-- MAIN -->
+  <div class="main" id="main"></div>
+
+  <!-- PATTERNS -->
+  <div class="patterns-section" id="pat-section" style="display:none">
+    <div class="pat-header">
+      <span class="pat-title">Today's Warning</span>
+      <button class="copy-btn" id="copy-btn" onclick="copyToNotes()">Copy Log</button>
+    </div>
+    <div class="pat-grid" id="pat-grid"></div>
+    <div id="warning-zone" style="display:none;margin-bottom:8px;"></div>
+    <div class="hist-toggle">
+      <button class="hist-toggle-btn" id="hist-btn" onclick="toggleHistory()">▸ show entries</button>
+    </div>
+    <div class="history-list" id="history-list" style="display:none"></div>
+  </div>
+
+  <div class="spacer"></div>
+</div>
+
+<script>
+// ── CONSTANTS ──
+const TRIGGERS   = ['People','Work','Money','Self','Body','Close Rel.','Environment'];
+const URGES      = ['React','Avoid','Escape','Control','Attack','Shut Down','Quit'];
+const INTENSITIES= ['Mild','Strong','Overwhelming'];
+
+const RULES = {
+  'People':     { rule:'Delay your response.',          action:'Write the reply — don\'t send it yet. Wait 30 min.' },
+  'Work':       { rule:'Reduce scope immediately.',     action:'Name only the one next step. Nothing else.' },
+  'Money':      { rule:'No financial decision now.',    action:'Write the decision down. Return to it in 24h.' },
+  'Self':       { rule:'Separate feeling from fact.',   action:'Name the thought. Don\'t make it your identity.' },
+  'Body':       { rule:'Fix the body first.',           action:'Eat, rest, or walk before deciding anything.' },
+  'Close Rel.': { rule:'Don\'t react from this state.', action:'Delay the conversation until you\'re in Neutral phase.' },
+  'Environment':{ rule:'Change your environment.',      action:'Move location. Get outside. Shift the physical context.' },
+};
+
+const URGE_LINES = {
+  'React':     'You want to react. That\'s the swing — not you. Pause before it lands.',
+  'Avoid':     'You want to avoid. Avoidance keeps the charge alive. Name it instead.',
+  'Escape':    'You want to escape. Pause first — then choose consciously where to go.',
+  'Control':   'You want to control the situation. Control from this state causes damage.',
+  'Attack':    'You want to attack. The target isn\'t the real source. Hold it.',
+  'Shut Down': 'You want to shut down. Small action breaks the freeze — one step only.',
+  'Quit':      'You want to quit. Decisions made in this state don\'t survive the return swing.',
+};
+
+const PHASE_CONFIG = {
+  Low:     { cls:'pb-low',    banner:'🚫 Low phase — No decisions. No reactions. Your judgment is compromised right now.' },
+  Neutral: { cls:'pb-neutral',banner:'◎ Neutral phase — Observe clearly. Good state to process and decide.' },
+  High:    { cls:'pb-high',   banner:'⚡ High phase — Use this window. What matters most right now?' },
+};
+
+// ── STATE ──
+let phase = 'Neutral';
+let logs  = [];
+let histOpen = false;
+let quickTrigger = null;
+let delayTimer = null;
+let delayRemaining = 0;
+let S = {};
+function resetS(){ S={event:'',thought:'',type:null,trigger:null,urge:null,intensity:null,outcome:null,_rep:0}; }
+resetS();
+
+// ── INIT ──
+function init(){
+  const saved = localStorage.getItem('umami_os_v3');
+  if(saved) logs = JSON.parse(saved);
+  const sp=localStorage.getItem('umami_phase'), sd=localStorage.getItem('umami_phase_date');
+  if(sp && sd===new Date().toDateString()) phase=sp;
+  updatePhaseUI();
+  updateMetrics();
+  renderQuickChips();
+  renderStage('input');
+  updatePatterns();
+  checkDeferredOutcomes();
+  setTimeout(()=>{ const t=document.getElementById('thought-input'); if(t)t.focus(); },300);
+}
+
+// ── PHASE ──
+function setPhase(p){
+  phase=p;
+  localStorage.setItem('umami_phase',p);
+  localStorage.setItem('umami_phase_date',new Date().toDateString());
+  updatePhaseUI();
+}
+function updatePhaseUI(){
+  // Pill in topbar
+  document.getElementById('phase-pill').innerHTML = ['Low','Neutral','High'].map(p=>
+    `<button class="pp-btn${phase===p?' active-'+p:''}" onclick="setPhase('${p}')">${p}</button>`
+  ).join('');
+  // Banner
+  const cfg=PHASE_CONFIG[phase];
+  const banner=document.getElementById('phase-banner');
+  banner.className='phase-banner '+cfg.cls;
+  document.getElementById('pb-text').textContent=cfg.banner;
+}
+
+// ── METRICS ──
+function todayLogs(){ return logs.filter(l=>l.date===new Date().toDateString()); }
+function updateMetrics(){
+  const tl=todayLogs();
+  const prevented=tl.filter(l=>l.type==='C'||l.outcome==='caught').length;
+  const reacted  =tl.filter(l=>l.outcome==='acted').length;
+  document.getElementById('m-p').textContent='✓ '+prevented;
+  document.getElementById('m-r').textContent='✗ '+reacted;
+}
+
+// ── QUICK LOG ──
+function renderQuickChips(){
+  document.getElementById('quick-chips').innerHTML=TRIGGERS.map(t=>
+    `<button class="qchip${quickTrigger===t?' active':''}" onclick="toggleQT('${t}')">${t}</button>`
+  ).join('');
+  const btn=document.getElementById('ql-btn');
+  btn.className='ql-btn'+(quickTrigger?' ready':'');
+}
+function toggleQT(t){ quickTrigger=quickTrigger===t?null:t; renderQuickChips(); }
+function quickLog(){
+  if(!quickTrigger)return;
+  const entry={time:nowTime(),type:'Q',thought:'(quick)',trigger:quickTrigger,
+    urge:null,outcome:null,intensity:null,phase,date:new Date().toDateString()};
+  saveEntry(entry);
+  quickTrigger=null; renderQuickChips();
+  const btn=document.getElementById('ql-btn');
+  btn.textContent='✓'; btn.style.color='#8FD46B';
+  setTimeout(()=>{btn.textContent='Log';btn.style.color='';},1200);
+}
+
+// ── DEFERRED OUTCOME CHECK ──
+// When reopening app, check if any D entries from last 2h have no outcome set
+function checkDeferredOutcomes(){
+  const zone=document.getElementById('deferred-zone');
+  zone.innerHTML='';
+  const now=Date.now();
+  const pending=logs.filter(l=>
+    l.type==='D' && !l.outcome &&
+    l.date===new Date().toDateString() &&
+    (now - (l.timestamp||0)) > 60000 && // at least 1 min ago
+    (now - (l.timestamp||0)) < 7200000  // within 2 hours
+  );
+  if(pending.length===0)return;
+  const entry=pending[0]; // show one at a time
+  const card=document.createElement('div');
+  card.className='deferred-card';
+  card.innerHTML=`
+    <div class="deferred-label">Outcome Check</div>
+    <div class="deferred-text">Earlier: <em>"${esc(entry.thought)}"</em><br>Did you act on it?</div>
+    <div class="deferred-row">
+      <button class="btn btn-green btn-sm" onclick="resolveDeferred('${entry.time}','caught')">✓ Held it</button>
+      <button class="btn btn-red btn-sm" onclick="resolveDeferred('${entry.time}','acted')">Acted on it</button>
+      <button class="btn btn-ghost btn-sm" onclick="dismissDeferred('${entry.time}')">Skip</button>
+    </div>`;
+  zone.appendChild(card);
+}
+function resolveDeferred(time,outcome){
+  const idx=logs.findIndex(l=>l.time===time&&l.type==='D'&&!l.outcome);
+  if(idx>-1){ logs[idx].outcome=outcome; localStorage.setItem('umami_os_v3',JSON.stringify(logs)); }
+  updateMetrics(); updatePatterns();
+  document.getElementById('deferred-zone').innerHTML='';
+  checkDeferredOutcomes();
+}
+function dismissDeferred(time){
+  const idx=logs.findIndex(l=>l.time===time&&l.type==='D'&&!l.outcome);
+  if(idx>-1){ logs[idx].outcome='skipped'; localStorage.setItem('umami_os_v3',JSON.stringify(logs)); }
+  document.getElementById('deferred-zone').innerHTML='';
+}
+
+// ── RENDER STAGES ──
+const FLOW=['input','classify','trigger','intensity','urge','rule'];
+function track(current){
+  const steps=['classify','trigger','intensity','urge','rule'];
+  const idx=steps.indexOf(current);
+  return steps.map((s,i)=>
+    `<div class="sdot ${i<idx?'done':i===idx?'active':''}"></div>`
+  ).join('');
+}
+
+function renderStage(s){
+  const el=document.getElementById('main');
+  el.innerHTML='';
+  const w=document.createElement('div');
+  w.className='stage';
+
+  if(s==='input'){
+    w.innerHTML=`
+      <div style="font-size:18px;color:var(--gold);font-weight:300;letter-spacing:0.5px;margin-bottom:14px;">What arose?</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="arose-btns">
+        <button class="arose-btn" data-type="thought"   onclick="toggleArose('thought')"  >Thought</button>
+        <button class="arose-btn" data-type="emotion"   onclick="toggleArose('emotion')"  >Emotion</button>
+        <button class="arose-btn" data-type="sensation" onclick="toggleArose('sensation')" >Sensation</button>
+      </div>
+      <div id="arose-fields"></div>
+      <input type="hidden" id="thought-input"/>
+      <div style="height:4px"></div>
+      <button class="btn btn-gold" id="name-btn" disabled onclick="goClassify()">Name It →</button>`;
+    el.appendChild(w);
+    setTimeout(()=>{ const t=document.getElementById('thought-input'); if(t)t.focus(); },80);
+  }
+
+  else if(s==='classify'){
+    w.innerHTML=`
+      <div class="step-track">${track('classify')}</div>
+      <div class="s-label sl-gold">Observe without judgment</div>
+      <div class="tc tc-n">"${esc(S.thought)}"</div>
+      <div style="font-size:13px;color:var(--gold-dim);text-align:center;margin-bottom:14px;letter-spacing:1px;">This thought is —</div>
+      <div class="btn-row">
+        <button class="btn btn-c" onclick="goTrigger('C')">↑ Constructive</button>
+        <button class="btn btn-d" onclick="goTrigger('D')">↓ Destructive</button>
+      </div>`;
+    el.appendChild(w);
+  }
+
+  else if(s==='trigger'){
+    w.innerHTML=`
+      <div class="step-track">${track('trigger')}</div>
+      <div class="s-label sl-amber">What triggered this?</div>
+      <div class="chip-group" id="trig-chips">
+        ${TRIGGERS.map(t=>`<button class="chip" onclick="selT('${t}')">${t}</button>`).join('')}
+      </div>
+      <button class="btn ${S.type==='C'?'btn-green':'btn-red'}" id="trig-next" disabled onclick="goIntensity()">Continue →</button>
+      <div class="skip" onclick="skipTrig()">skip →</div>`;
+    el.appendChild(w);
+  }
+
+  else if(s==='intensity'){
+    w.innerHTML=`
+      <div class="step-track">${track('intensity')}</div>
+      <div class="s-label sl-amber">How strong was it?</div>
+      <div class="chip-group" id="int-chips" style="justify-content:center;">
+        ${INTENSITIES.map(i=>`<button class="chip" style="flex:1;text-align:center;" onclick="selI('${i}')">${i}</button>`).join('')}
+      </div>
+      <button class="btn ${S.type==='C'?'btn-green':'btn-red'}" id="int-next" disabled onclick="goUrge()">Continue →</button>
+      <div class="skip" onclick="skipInt()">skip →</div>`;
+    el.appendChild(w);
+  }
+
+  else if(s==='urge'){
+    w.innerHTML=`
+      <div class="step-track">${track('urge')}</div>
+      <div class="s-label sl-amber">What do you feel like doing?</div>
+      <div class="chip-group" id="urge-chips">
+        ${URGES.map(u=>`<button class="chip" onclick="selU('${u}')">${u}</button>`).join('')}
+      </div>
+      <button class="btn ${S.type==='C'?'btn-green':'btn-red'}" id="urge-next" disabled
+        onclick="${S.type==='C'?'goRepeat()':'goRule()'}">Continue →</button>
+      <div class="skip" onclick="skipUrge()">skip →</div>`;
+    el.appendChild(w);
+  }
+
+  else if(s==='rule'){
+    const r=S.trigger?RULES[S.trigger]:{rule:'Pause before acting.',action:'Wait for Neutral phase before deciding.'};
+    const urgeLine=S.urge?URGE_LINES[S.urge]:'';
+    const phCls=phase.toLowerCase();
+    const phLabel={Low:'⚠ Low Phase',Neutral:'◎ Neutral',High:'⚡ High Phase'}[phase];
+    // In Low phase — delay timer is PRIMARY, continue is secondary
+    const isLow=phase==='Low';
+    w.innerHTML=`
+      <div class="step-track">${track('rule')}</div>
+      <div class="rule-card phase-${phCls}">
+        <span class="rule-phase-badge ${phCls}">${phLabel}</span>
+        <div class="rule-title">Rule${S.trigger?' — '+S.trigger:''}</div>
+        <div class="rule-main">${r.rule}</div>
+        ${urgeLine?`<div class="rule-urge-line">${urgeLine}</div>`:''}
+        <div class="rule-action">→ ${r.action}</div>
+      </div>
+      ${isLow?`
+        <div id="delay-zone">
+          <button class="btn btn-amber" id="delay-start-btn" onclick="startDelay()" style="margin-bottom:10px;">
+            ⏱ Delay Action — 10 Minutes
+          </button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="goOutcome()" style="margin-top:4px;">I understand — skip delay</button>
+      `:`
+        <button class="btn ${S.type==='D'?'btn-red':'btn-green'}" onclick="goOutcome()">I understand — Continue →</button>
+      `}`;
+    el.appendChild(w);
+  }
+
+  else if(s==='repeat'){
+    const idx=S._rep||0;
+    const hints=["Say it again — let it land.","Once more. Feel it this time.","Third time. Own it."];
+    w.innerHTML=`
+      <div class="step-track">${track('rule')}</div>
+      <div class="s-label sl-green">Reinforce — ${idx+1} of 3</div>
+      <div class="tc tc-g">"${esc(S.thought)}"</div>
+      <div class="repeat-hint">${hints[idx]}</div>
+      <div class="dots">
+        <div class="dot ${idx>=0?'filled':''}"></div>
+        <div class="dot ${idx>=1?'filled':''}"></div>
+        <div class="dot ${idx>=2?'filled':''}"></div>
+      </div>
+      <button class="btn btn-green" onclick="handleRepeat()">
+        ${idx<2?'Say It Again':'Complete &amp; Log'}
+      </button>`;
+    el.appendChild(w);
+  }
+
+  else if(s==='release'){
+    const suggestions = [
+      { key:'Hold',    icon:'◉', desc:'Stay with the feeling. Don\'t act. Let it pass through.' },
+      { key:'Delay',   icon:'⏱', desc:'Give it 10 minutes before doing anything.' },
+      { key:'Shift',   icon:'↗', desc:'Change your physical state — move, breathe, go outside.' },
+      { key:'Observe', icon:'◎', desc:'Watch it like weather. You are not the storm.' },
+    ];
+    w.innerHTML=`
+      <div class="s-label sl-red">Name it. Release it.</div>
+      <div class="tc tc-r">"${esc(S.thought)}"</div>
+      <div style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--gold-dim);font-family:var(--mono);margin-bottom:10px;">What will you do instead?</div>
+      <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:16px;">
+        ${suggestions.map(s=>`
+          <div style="display:flex;gap:12px;align-items:flex-start;padding:11px 14px;border-radius:8px;background:rgba(240,160,64,0.05);border:1px solid rgba(240,160,64,0.15);cursor:pointer;transition:all 0.15s;" onclick="this.style.background='rgba(240,160,64,0.15)';this.style.borderColor='var(--amber)';">
+            <span style="font-size:16px;color:var(--amber);min-width:20px;">${s.icon}</span>
+            <div>
+              <div style="font-size:13px;color:var(--gold);font-family:var(--mono);letter-spacing:1px;margin-bottom:3px;">${s.key}</div>
+              <div style="font-size:13px;color:var(--gold-dim);line-height:1.5;font-style:italic;">${s.desc}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+      <button class="btn btn-red" onclick="doRelease()">Release &amp; Log</button>`;
+    el.appendChild(w);
+  }
+
+  else if(s==='logged'){
+    const isC=S.type==='C';
+    const chips=[
+      S.trigger   ?`<span class="mc mc-t">${S.trigger}</span>`:'',
+      S.urge      ?`<span class="mc mc-u">${S.urge}</span>`:'',
+      S.outcome==='caught'?`<span class="mc mc-c">caught ✓</span>`:'',
+      S.outcome==='acted' ?`<span class="mc mc-a">acted first</span>`:'',
+      S.intensity ?`<span class="mc mc-i">${S.intensity}</span>`:'',
+    ].filter(Boolean).join('');
+    w.innerHTML=`
+      <div class="logged-wrap">
+        <div class="logged-icon" style="
+          background:${isC?'var(--green-bg)':'var(--red-bg)'};
+          border:1px solid ${isC?'var(--green)':'var(--red)'};
+          color:${isC?'var(--green)':'var(--red)'};
+          box-shadow:0 0 22px ${isC?'rgba(143,212,107,0.25)':'rgba(232,112,96,0.25)'};">
+          ${isC?'✓':'○'}
+        </div>
+        <div class="logged-title">${isC?'Reinforced and logged.':'Named and released.'}</div>
+        <div class="logged-sub">${isC?"That thought is yours now.":"It passed through.<br>It doesn't define you."}</div>
+        ${chips?`<div class="meta-strip">${chips}</div>`:''}
+        <button class="btn btn-gold" onclick="goNext()">Log Another</button>
+        <div style="height:8px"></div>
+        <button class="btn btn-ghost" onclick="scrollToPat()">View Patterns</button>
+      </div>`;
+    el.appendChild(w);
+  }
+}
+
+// ── INPUT HANDLERS ──
+// ── AROSE LOGIC ──
+const AROSE_TYPES = {
+  thought:   { label:'Thought',   placeholder:'What was the thought exactly?',              cls:'afl-thought',   fw:'fw-thought'   },
+  emotion:   { label:'Emotion',   placeholder:'Name the emotion as precisely as you can.',  cls:'afl-emotion',   fw:'fw-emotion'   },
+  sensation: { label:'Sensation', placeholder:'Where in the body? What did it feel like?',  cls:'afl-sensation', fw:'fw-sensation' },
+};
+let aroseSelected = {};
+
+function toggleArose(type){
+  // Save all current textarea values FIRST before any DOM change
+  saveAroseFieldValues();
+  if(aroseSelected.hasOwnProperty(type)){
+    delete aroseSelected[type];
+  } else {
+    aroseSelected[type] = '';
+  }
+  renderAroseButtons();
+  renderAroseFields();
+  checkNameBtn();
+  setTimeout(()=>{
+    const ta = document.querySelector('#arose-fields textarea');
+    if(ta) ta.focus();
+  }, 50);
+}
+
+function clearArose(type){
+  // Save other fields, then remove just this one
+  saveAroseFieldValues();
+  delete aroseSelected[type];
+  renderAroseButtons();
+  renderAroseFields();
+  checkNameBtn();
+}
+
+function saveAroseFieldValues(){
+  // Snapshot current textarea values into aroseSelected without touching keys
+  const order=['thought','sensation','emotion','urge'];
+  order.forEach(t=>{
+    const el=document.querySelector(`#arose-fields [data-arose="${t}"]`);
+    if(el && aroseSelected.hasOwnProperty(t)) aroseSelected[t]=el.value;
+  });
+}
+
+function renderAroseButtons(){
+  document.querySelectorAll('.arose-btn').forEach(btn=>{
+    const t=btn.dataset.type;
+    btn.className='arose-btn'+(aroseSelected.hasOwnProperty(t)?' active-'+t:'');
+  });
+}
+
+function renderAroseFields(){
+  const el=document.getElementById('arose-fields');
+  if(!el)return;
+  const order=['thought','sensation','emotion','urge'];
+  el.innerHTML=order.filter(t=>aroseSelected.hasOwnProperty(t)).map(t=>{
+    const cfg=AROSE_TYPES[t];
+    return `
+      <div class="arose-field-wrap ${cfg.fw}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div class="arose-field-label ${cfg.cls}" style="margin-bottom:0;">${cfg.label}</div>
+          <button onclick="clearArose('${t}')" style="background:none;border:none;color:#5A4528;font-size:11px;font-family:var(--mono);letter-spacing:1px;cursor:pointer;padding:0;text-transform:uppercase;">clear ✕</button>
+        </div>
+        <textarea rows="2" placeholder="${cfg.placeholder}"
+          data-arose="${t}"
+          oninput="aroseInput('${t}',this.value)"
+          style="width:100%;resize:none;outline:none;">${aroseSelected[t]||''}</textarea>
+      </div>`;
+  }).join('');
+}
+
+function aroseInput(type, val){
+  aroseSelected[type]=val;
+  checkNameBtn();
+  // Build combined thought for downstream use
+  buildThought();
+}
+
+function buildThought(){
+  const parts=Object.entries(aroseSelected)
+    .filter(([,v])=>v&&v.trim())
+    .map(([k,v])=>AROSE_TYPES[k].label+': '+v.trim());
+  S.thought = parts.join(' | ') || Object.keys(aroseSelected).join(', ');
+  // Keep hidden input in sync for any legacy references
+  const hi=document.getElementById('thought-input');
+  if(hi)hi.value=S.thought;
+}
+
+function checkNameBtn(){
+  const hasSelection = Object.keys(aroseSelected).length > 0;
+  const b=document.getElementById('name-btn');
+  if(b) b.disabled=!hasSelection;
+  buildThought();
+}
+
+function onTI(){ S.thought=document.getElementById('thought-input').value.trim(); const b=document.getElementById('name-btn');if(b)b.disabled=!S.thought; }
+function onTK(e){ if(e.key==='Enter'&&!e.shiftKey&&S.thought){e.preventDefault();goClassify();} }
+
+// ── TRANSITIONS ──
+function goClassify(){ renderStage('classify'); }
+function goTrigger(type){ S.type=type;S.trigger=null;S.urge=null;S.intensity=null;S.outcome=null;renderStage('trigger'); }
+function goIntensity(){ renderStage('intensity'); }
+function goUrge(){ renderStage('urge'); }
+function goRule(){ renderStage('rule'); }
+function goRepeat(){ S._rep=0; renderStage('repeat'); }
+function goOutcome(){ renderStage('release'); } // outlet for D thoughts post-rule
+
+function handleRepeat(){
+  if((S._rep||0)<2){ S._rep=(S._rep||0)+1; renderStage('repeat'); }
+  else{ doSaveC(); }
+}
+function doRelease(){ doSaveD(); }
+
+function doSaveC(){
+  const entry={time:nowTime(),timestamp:Date.now(),type:'C',thought:S.thought,event:S.event,
+    trigger:S.trigger,urge:S.urge,intensity:S.intensity,outcome:null,
+    aroseTypes:Object.keys(aroseSelected),phase,date:new Date().toDateString()};
+  saveEntry(entry); renderStage('logged');
+}
+function doSaveD(){
+  const entry={time:nowTime(),timestamp:Date.now(),type:'D',thought:S.thought,event:S.event,
+    trigger:S.trigger,urge:S.urge,intensity:S.intensity,outcome:null,
+    aroseTypes:Object.keys(aroseSelected),phase,date:new Date().toDateString()};
+  saveEntry(entry); renderStage('logged');
+}
+
+function goNext(){
+  resetS();
+  aroseSelected={};
+  renderStage('input');
+  checkDeferredOutcomes();
+  if(histOpen)updateHistoryList();
+  setTimeout(()=>{const t=document.getElementById('thought-input');if(t)t.focus();},100);
+}
+
+// ── CHIP SELECTORS ──
+function selT(v){
+  S.trigger=v;
+  document.querySelectorAll('#trig-chips .chip').forEach(c=>{c.className='chip';if(c.textContent===v)c.classList.add('s-trig');});
+  const b=document.getElementById('trig-next');if(b)b.disabled=false;
+}
+function selI(v){
+  S.intensity=v;
+  document.querySelectorAll('#int-chips .chip').forEach(c=>{
+    c.className='chip';
+    if(c.textContent===v){if(v==='Mild')c.classList.add('s-mild');else if(v==='Strong')c.classList.add('s-strong');else c.classList.add('s-overwhelm');}
+  });
+  const b=document.getElementById('int-next');if(b)b.disabled=false;
+}
+function selU(v){
+  S.urge=v;
+  document.querySelectorAll('#urge-chips .chip').forEach(c=>{c.className='chip';if(c.textContent===v)c.classList.add('s-urge');});
+  const b=document.getElementById('urge-next');if(b)b.disabled=false;
+}
+
+// ── SKIPS ──
+function skipTrig(){ S.trigger=null; if(S.type==='C')goRepeat();else goIntensity(); }
+function skipInt(){  S.intensity=null; goUrge(); }
+function skipUrge(){ S.urge=null; if(S.type==='C')goRepeat();else goRule(); }
+
+// ── DELAY TIMER ──
+function startDelay(){
+  if(delayTimer)return;
+  delayRemaining=600;
+  const zone=document.getElementById('delay-zone');
+  zone.innerHTML=`
+    <div class="delay-primary">
+      <div class="delay-label-top">Hold. Don't act.</div>
+      <div class="delay-count" id="dc">10:00</div>
+      <div class="delay-sub">delay active</div>
+    </div>`;
+  delayTimer=setInterval(()=>{
+    delayRemaining--;
+    const m=Math.floor(delayRemaining/60), s=delayRemaining%60;
+    const dc=document.getElementById('dc');
+    if(dc)dc.textContent=m+':'+(s<10?'0':'')+s;
+    if(delayRemaining<=0){
+      clearInterval(delayTimer);delayTimer=null;
+      const zone2=document.getElementById('delay-zone');
+      if(zone2)zone2.innerHTML=`
+        <div class="delay-complete">
+          <div class="delay-complete-text">10 minutes held.<br>Has the charge reduced?</div>
+          <div class="delay-reassess-row">
+            <button class="btn btn-green btn-sm" onclick="delayResolved('reduced')">Yes — respond now</button>
+            <button class="btn btn-amber btn-sm" onclick="delayResolved('still-high')">No — extend</button>
+          </div>
+        </div>`;
+    }
+  },1000);
+}
+function delayResolved(result){
+  const zone=document.getElementById('delay-zone');
+  if(result==='reduced'){
+    if(zone)zone.innerHTML=`<div style="font-size:13px;color:var(--green-mid);text-align:center;padding:10px 0;font-style:italic;">Good. Proceed from a steadier state.</div>`;
+    setTimeout(()=>goOutcome(),1200);
+  } else {
+    // extend by 5 more minutes
+    delayRemaining=300;
+    if(zone)zone.innerHTML=`
+      <div class="delay-primary">
+        <div class="delay-label-top">Extending — stay with it.</div>
+        <div class="delay-count" id="dc">5:00</div>
+        <div class="delay-sub">extended delay</div>
+      </div>`;
+    delayTimer=setInterval(()=>{
+      delayRemaining--;
+      const m=Math.floor(delayRemaining/60),s=delayRemaining%60;
+      const dc=document.getElementById('dc');
+      if(dc)dc.textContent=m+':'+(s<10?'0':'')+s;
+      if(delayRemaining<=0){
+        clearInterval(delayTimer);delayTimer=null;
+        const z=document.getElementById('delay-zone');
+        if(z)z.innerHTML=`<div style="font-size:13px;color:var(--gold-mid);text-align:center;padding:10px 0;font-style:italic;">Time held. You stayed with it.</div>`;
+        setTimeout(()=>goOutcome(),1200);
+      }
+    },1000);
+  }
+}
+
+// ── SAVE ──
+function saveEntry(entry){
+  logs.unshift(entry);
+  localStorage.setItem('umami_os_v3',JSON.stringify(logs));
+  updateMetrics(); updatePatterns();
+}
+function nowTime(){ return new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}); }
+
+// ── PATTERNS ──
+function updatePatterns(){
+  const tl=todayLogs().filter(l=>l.type!=='Q'||l.trigger);
+  const ps=document.getElementById('pat-section');
+  if(tl.length===0){ps.style.display='none';return;}
+  ps.style.display='block';
+
+  // ── COMPACT STATS ROW ──
+  const dAll=tl.filter(l=>l.type==='D');
+  const dResolved=dAll.filter(l=>l.outcome==='prevented'||l.outcome==='reacted');
+  const prevented=dResolved.filter(l=>l.outcome==='prevented').length;
+  const catchRate=dResolved.length?Math.round((prevented/dResolved.length)*100):null;
+  const tc={};tl.forEach(l=>{if(l.trigger)tc[l.trigger]=(tc[l.trigger]||0)+1;});
+  const topT=Object.entries(tc).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('pat-grid').innerHTML=`
+    <div class="pat-card" style="display:flex;align-items:center;gap:10px;">
+      <div>
+        <div class="pat-card-label">Top Trigger</div>
+        <div class="pat-card-value" style="font-size:14px;">${topT?topT[0]+'  ×'+topT[1]:'—'}</div>
+      </div>
+    </div>
+    <div class="pat-card" style="display:flex;align-items:center;gap:10px;">
+      <div>
+        <div class="pat-card-label">Catch Rate</div>
+        <div class="pat-card-value" style="font-size:14px;color:${catchRate===null?'var(--text-dim)':catchRate>=70?'var(--green)':catchRate>=40?'var(--amber)':'var(--red)'};">${catchRate!==null?catchRate+'%':'—'}</div>
+      </div>
+    </div>`;
+
+  // ── WARNING DISPLAY ──
+  const warning = computeWarning(tl);
+  const wz=document.getElementById('warning-zone');
+  if(warning){
+    wz.style.display='block';
+    const levelTag = {RED:'Active Failure',AMBER:'Pattern Forming',GOLD:'Early Signal'}[warning.level]||warning.level;
+    wz.innerHTML=`
+      <div style="border-radius:10px;overflow:hidden;border:1.5px solid ${warning.border};">
+        <div style="padding:7px 14px;background:${warning.border};display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:9px;letter-spacing:3px;text-transform:uppercase;font-family:var(--mono);color:#0F0C06;font-weight:700;">${warning.label}</span>
+          <span style="font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:var(--mono);color:rgba(15,12,6,0.6);">${levelTag}</span>
+        </div>
+        <div style="padding:12px 14px;background:${warning.bg};">
+          <div style="font-size:14px;color:${warning.textColor};line-height:1.6;margin-bottom:8px;">${warning.signal}</div>
+          <div style="font-size:12px;color:${warning.actionColor};font-family:var(--mono);letter-spacing:0.5px;margin-bottom:${warning.exit?'7px':'0'};">→ ${warning.action}</div>
+          ${warning.exit?`<div style="font-size:10px;color:var(--gold-dk);font-family:var(--mono);letter-spacing:1px;border-top:1px solid rgba(255,255,255,0.05);padding-top:6px;margin-top:2px;">${warning.exit}</div>`:''}
+        </div>
+      </div>`;
+  } else {
+    wz.style.display='none';
+    wz.innerHTML='';
+  }
+
+  if(histOpen)updateHistoryList();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WARNING ENGINE v2
+// Edit rules here to iterate. Each rule is a self-contained object.
+// Priority order = array order. First match wins.
+// Levels: RED (active failure) | AMBER (pattern forming) | GOLD (early signal)
+// ═══════════════════════════════════════════════════════════════
+
+const WARNING_STYLES = {
+  RED:   { bg:'rgba(232,112,96,0.09)',  border:'rgba(232,112,96,0.6)',  levelColor:'var(--red)',     textColor:'#F0DEB0', actionColor:'var(--red-mid)'  },
+  AMBER: { bg:'rgba(240,160,64,0.07)',  border:'rgba(240,160,64,0.45)', levelColor:'var(--amber)',   textColor:'#F0DEB0', actionColor:'var(--amber)'    },
+  GOLD:  { bg:'rgba(255,212,107,0.05)', border:'rgba(255,212,107,0.3)', levelColor:'var(--gold-dim)',textColor:'#F0DEB0', actionColor:'var(--gold-dim)' },
+};
+
+// ── HELPER: intensity score ──
+function intensityScore(i){ return {Mild:1,Strong:2,Overwhelming:3}[i]||0; }
+
+// ── HELPER: timestamps of D entries sorted newest first ──
+function dTimestamps(dEntries){ return dEntries.map(l=>l.timestamp||0).filter(t=>t>0); }
+
+// ── HELPER: check velocity (time between entries decreasing) ──
+function isAccelerating(timestamps){
+  if(timestamps.length<3) return false;
+  const gaps=[];
+  for(let i=0;i<timestamps.length-1;i++) gaps.push(timestamps[i]-timestamps[i+1]);
+  // gaps[0] = most recent interval. Accelerating if each gap is smaller than the next
+  return gaps[0]<gaps[1] && gaps[1]<gaps[2];
+}
+
+const WARNING_RULES = [
+
+  // ─────────────────────────────────────────────
+  // RED — ACTIVE FAILURE
+  // ─────────────────────────────────────────────
+
+  {
+    // System Override: any RED triggered twice in 3 hours
+    // Check this first — it supersedes all other RED
+    id: 'system-override',
+    level: 'RED',
+    label: 'SYSTEM OVERRIDE',
+    check(tl, dEntries, now){
+      const recent3h = dEntries.filter(l=>(now-(l.timestamp||0))<10800000);
+      // Count how many RED-level conditions are active in that window
+      const reactedStreak = (()=>{
+        const last2=dEntries.slice(0,2);
+        return last2.length>=2 && last2.every(l=>l.outcome==='reacted') &&
+          (last2.some(l=>intensityScore(l.intensity)>=2) ||
+           (last2[0].timestamp&&last2[1].timestamp&&(last2[0].timestamp-last2[1].timestamp)<1800000));
+      })();
+      const spiral = dEntries.filter(l=>(now-(l.timestamp||0))<5400000).length>=3;
+      const overwhelm = dEntries.filter(l=>l.intensity==='Overwhelming'&&(now-(l.timestamp||0))<3600000).length>=2;
+      const redCount = [reactedStreak,spiral,overwhelm].filter(Boolean).length;
+      return redCount>=2;
+    },
+    signal: 'Multiple failure signals active. This environment is not working right now.',
+    action: 'Stop the session entirely. Change your physical environment before continuing.',
+    exit:   'Exit: return only after a full environment change and 30 min gap.',
+  },
+
+  {
+    // Escalation: 3 D entries within 60 min AND time between entries is decreasing
+    id: 'escalation',
+    level: 'RED',
+    label: 'ESCALATING',
+    check(tl, dEntries, now){
+      const recent60 = dEntries.filter(l=>(now-(l.timestamp||0))<3600000);
+      if(recent60.length<3) return false;
+      const ts = dTimestamps(recent60);
+      return isAccelerating(ts);
+    },
+    signal: 'Entries are coming faster — you are losing ground, not holding it.',
+    action: 'Leave your current context immediately. Do not log again for 20 min.',
+    exit:   'Exit: 20 min without a D entry.',
+  },
+
+  {
+    // Reacted Streak: 2 consecutive reacted + (Strong/Overwhelming OR within 30 min)
+    id: 'reacted-streak',
+    level: 'RED',
+    label: 'REACTED STREAK',
+    check(tl, dEntries, now){
+      const last2 = dEntries.slice(0,2);
+      if(last2.length<2) return false;
+      if(!last2.every(l=>l.outcome==='reacted')) return false;
+      const hasWeight = last2.some(l=>intensityScore(l.intensity)>=2);
+      const within30  = last2[0].timestamp&&last2[1].timestamp &&
+                        (last2[0].timestamp-last2[1].timestamp)<1800000;
+      return hasWeight || within30;
+    },
+    signal: 'You reacted twice in a row. Control is slipping.',
+    action: 'Set 10 min timer now. No messages, no decisions until it ends.',
+    exit:   'Exit: log 1 Prevented entry.',
+  },
+
+  {
+    // Destructive Spiral: 3+ D within 90 min
+    id: 'destructive-spiral',
+    level: 'RED',
+    label: 'DESTRUCTIVE SPIRAL',
+    check(tl, dEntries, now){
+      return dEntries.filter(l=>(now-(l.timestamp||0))<5400000).length>=3;
+    },
+    signal: 'You are inside the swing — not observing it.',
+    action: 'Treat this as Low phase. No decisions, no reactions, no responses.',
+    exit:   'Exit: 30 min without a D entry.',
+  },
+
+  {
+    // Overwhelm Cluster: 2+ Overwhelming within 60 min
+    id: 'overwhelm-cluster',
+    level: 'RED',
+    label: 'PHYSIOLOGICAL OVERLOAD',
+    check(tl, dEntries, now){
+      return dEntries.filter(l=>l.intensity==='Overwhelming'&&(now-(l.timestamp||0))<3600000).length>=2;
+    },
+    signal: 'System saturated. Cognitive tools will not work here.',
+    action: 'Body reset only — walk outside, breathe, no screens for 10 min.',
+    exit:   'Exit: next entry intensity is Mild or Strong (not Overwhelming).',
+  },
+
+  // ─────────────────────────────────────────────
+  // AMBER — PATTERN FORMING
+  // ─────────────────────────────────────────────
+
+  {
+    // Urge Escalation: same urge 2+ times in 2 hrs
+    id: 'urge-escalation',
+    level: 'AMBER',
+    label: 'URGE ESCALATION',
+    check(tl, dEntries, now){
+      const recent120 = dEntries.filter(l=>(now-(l.timestamp||0))<7200000);
+      const urgeMap={};
+      recent120.forEach(l=>{if(l.urge)urgeMap[l.urge]=(urgeMap[l.urge]||0)+1;});
+      this._urge = Object.entries(urgeMap).sort((a,b)=>b[1]-a[1])[0];
+      return this._urge && this._urge[1]>=2;
+    },
+    signal(){
+      const u=this._urge;
+      return '"'+u[0]+'" has appeared '+u[1]+'x in 2 hours. This is momentum, not a single event.';
+    },
+    action(){
+      const u=this._urge;
+      return 'Apply the '+u[0]+' urge rule now — before the next instance arrives.';
+    },
+    exit: 'Exit: 2 hours without the same urge.',
+  },
+
+  {
+    // Emotion Spiral: 3+ D entries with emotion arose type today
+    id: 'emotion-spiral',
+    level: 'AMBER',
+    label: 'EMOTION SPIRAL',
+    check(tl, dEntries, now){
+      return dEntries.filter(l=>l.aroseTypes&&l.aroseTypes.includes('emotion')).length>=3;
+    },
+    signal: 'Emotional activation is driving most entries today.',
+    action: 'Stop processing. No journaling, no reflection — rest or move.',
+    exit:   'Exit: 1 C entry or 1 hour without D entries.',
+  },
+
+  {
+    // Trigger Loop: same trigger 3+ times today
+    id: 'trigger-loop',
+    level: 'AMBER',
+    label: 'TRIGGER LOOP',
+    check(tl, dEntries, now){
+      const tc={};
+      tl.forEach(l=>{if(l.trigger)tc[l.trigger]=(tc[l.trigger]||0)+1;});
+      const top=Object.entries(tc).sort((a,b)=>b[1]-a[1])[0];
+      this._trig=top;
+      return top&&top[1]>=3;
+    },
+    signal(){
+      return '"'+this._trig[0]+'" has triggered you '+this._trig[1]+'x today.';
+    },
+    action: 'This is a structural condition. What can you change about it — not just your response to it?',
+    exit:   'Exit: no new entries for this trigger for 2 hours.',
+  },
+
+  {
+    // Avoidance Pattern: Q entries >= 50% of entries in last 2 hours
+    id: 'avoidance-pattern',
+    level: 'AMBER',
+    label: 'AVOIDANCE PATTERN',
+    check(tl, dEntries, now){
+      const recent2h = tl.filter(l=>(now-(l.timestamp||0))<7200000);
+      if(recent2h.length<4) return false;
+      const qCount = recent2h.filter(l=>l.type==='Q').length;
+      return (qCount/recent2h.length)>=0.5;
+    },
+    signal: 'More than half your recent logs are quick entries. You are marking, not processing.',
+    action: 'Next entry must be a full log. Open one quick entry and complete it.',
+    exit:   'Exit: complete 1 full D or C entry.',
+  },
+
+  // ─────────────────────────────────────────────
+  // GOLD — EARLY SIGNAL
+  // ─────────────────────────────────────────────
+
+  {
+    // Phase Mismatch: set to Neutral/High but 2+ Overwhelming today
+    id: 'phase-mismatch',
+    level: 'GOLD',
+    label: 'PHASE MISMATCH',
+    check(tl, dEntries, now){
+      return (phase==='Neutral'||phase==='High') &&
+             dEntries.filter(l=>l.intensity==='Overwhelming').length>=2;
+    },
+    signal: 'Your entries suggest Low phase conditions. Your phase setting may be off.',
+    action: 'Reset phase to Low. Apply its protocol for the rest of the session.',
+    exit:   'Exit: update phase to Low.',
+  },
+
+  {
+    // Quick Log Nudge: same trigger quick-logged 3+ times today
+    id: 'quick-nudge',
+    level: 'GOLD',
+    label: 'QUICK LOG NUDGE',
+    check(tl, dEntries, now){
+      const qLogs = tl.filter(l=>l.type==='Q');
+      const tc={};
+      qLogs.forEach(l=>{if(l.trigger)tc[l.trigger]=(tc[l.trigger]||0)+1;});
+      const top=Object.entries(tc).sort((a,b)=>b[1]-a[1])[0];
+      this._qtrig=top;
+      return top&&top[1]>=3;
+    },
+    signal(){
+      return '"'+this._qtrig[0]+'" has appeared in '+this._qtrig[1]+' quick logs today.';
+    },
+    action: 'This trigger keeps surfacing. Do one full entry on it now.',
+    exit:   'Exit: complete 1 full entry for this trigger.',
+  },
+
+];
+
+// ─────────────────────────────────────────────
+// COMPUTE: run rules in priority order, return first match
+// ─────────────────────────────────────────────
+function computeWarning(tl){
+  const now = Date.now();
+  const dEntries = tl.filter(l=>l.type==='D');
+
+  for(const rule of WARNING_RULES){
+    let triggered = false;
+    try { triggered = rule.check(tl, dEntries, now); } catch(e){}
+    if(!triggered) continue;
+
+    const style = WARNING_STYLES[rule.level];
+    const signal = typeof rule.signal==='function' ? rule.signal.call(rule) : rule.signal;
+    const action = typeof rule.action==='function' ? rule.action.call(rule) : rule.action;
+
+    return {
+      level:  rule.level,
+      label:  rule.label,
+      signal,
+      action,
+      exit:   rule.exit||'',
+      ...style,
+    };
+  }
+  return null;
+}
+
+function getInsight(tl,topT,catchRate,topP){
+  if(tl.length<2)return null;
+  const dCount=tl.filter(l=>l.type==='D').length;
+  if(catchRate===100&&dCount>=2)return 'Every destructive thought caught today. The observer is working.';
+  if(catchRate===0&&dCount>=2)return 'All D thoughts acted on. Notice the phase you were in when it happened.';
+  if(topT&&topT[1]>=2)return `${topT[0]} is your primary trigger today (${topT[1]}x). Pre-apply the ${topT[0]} rule for the rest of the day.`;
+  if(topP&&topP[0]==='Low'&&topP[1]>=2)return 'Most events in Low phase. Protect your decisions — default to delay.';
+  return null;
+}
+
+// ── HISTORY ──
+function toggleHistory(){
+  histOpen=!histOpen;
+  document.getElementById('history-list').style.display=histOpen?'flex':'none';
+  document.getElementById('hist-btn').textContent=(histOpen?'▾ hide':'▸ show')+' entries';
+  if(histOpen)updateHistoryList();
+}
+function scrollToPat(){
+  document.getElementById('pat-section').scrollIntoView({behavior:'smooth'});
+}
+function updateHistoryList(){
+  const tl=todayLogs();
+  const isQ=e=>e.type==='Q';
+  const isC=e=>e.type==='C';
+  document.getElementById('history-list').innerHTML=tl.map((e,i)=>{
+    const q=isQ(e),c=isC(e);
+    const globalIdx=logs.findIndex(l=>l.time===e.time&&l.thought===e.thought&&l.date===e.date);
+    const tags=[
+      e.trigger?`<span class="h-tag ht-t">${e.trigger}</span>`:'',
+      e.urge?`<span class="h-tag ht-u">${e.urge}</span>`:'',
+      e.outcome==='caught'?`<span class="h-tag ht-c">caught ✓</span>`:'',
+      e.outcome==='acted'?`<span class="h-tag ht-a">acted</span>`:'',
+      (!e.outcome&&e.type==='D')?`<span class="h-tag ht-pending">pending</span>`:'',
+      e.intensity?`<span class="h-tag ht-i">${e.intensity.toLowerCase()}</span>`:'',
+    ].filter(Boolean).join('');
+    return `
+      <div class="h-entry ${q?'h-entry-q':c?'h-entry-c':'h-entry-d'}" onclick="openEditModal(${globalIdx})" style="cursor:pointer;">
+        <div class="h-top">
+          <span class="h-time ${q?'h-time-q':c?'h-time-c':'h-time-d'}">${e.time}</span>
+          <span class="h-type ${q?'h-type-q':c?'h-type-c':'h-type-d'}">${e.type}</span>
+          <span class="h-text ${q?'h-text-q':c?'h-text-c':'h-text-d'}">"${esc(e.thought)}"</span>
+          <span class="h-edit" style="font-size:10px;color:#3A2A10;font-family:var(--mono);padding-top:1px;">✎</span>
+        </div>
+        ${tags?`<div class="h-meta">${tags}</div>`:''}
+      </div>`;
+  }).join('');
+}
+
+// ── EDIT MODAL ──
+function openEditModal(idx){
+  const e=logs[idx];
+  if(!e)return;
+  const existing=document.getElementById('edit-modal');
+  if(existing)existing.remove();
+
+  const overlay=document.createElement('div');
+  overlay.id='edit-modal';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:100;display:flex;align-items:flex-end;justify-content:center;';
+
+  const TRIGS=['People','Work','Money','Self','Body','Close Rel.','Environment'];
+  const URGS=['React','Quit','Escape','Argue','Overeat','Scroll','Freeze'];
+  const INTS=['Mild','Strong','Overwhelming'];
+
+  overlay.innerHTML=`
+    <div style="width:100%;max-width:480px;background:#181208;border-radius:16px 16px 0 0;padding:20px 20px 36px;border-top:1px solid #3A2A10;animation:fadeUp 0.2s ease;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <span style="font-size:9px;letter-spacing:3px;text-transform:uppercase;color:#B8903A;font-family:var(--mono);">Edit Entry</span>
+        <button onclick="closeEditModal()" style="background:none;border:none;color:#4A3518;font-size:18px;cursor:pointer;font-family:var(--mono);">✕</button>
+      </div>
+      <div style="font-size:14px;color:#B8903A;font-style:italic;margin-bottom:16px;padding:10px 12px;background:#0A0800;border-radius:8px;border:1px solid #2A1E08;">"${esc(e.thought)}"</div>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#B8903A;font-family:var(--mono);margin-bottom:8px;">Type</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button onclick="editSet(${idx},'type','C')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid ${e.type==='C'?'var(--green)':'#2A1E08'};background:${e.type==='C'?'rgba(143,212,107,0.12)':'transparent'};color:${e.type==='C'?'var(--green)':'#4A3518'};font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:1px;">↑ C</button>
+        <button onclick="editSet(${idx},'type','D')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid ${e.type==='D'?'var(--red)':'#2A1E08'};background:${e.type==='D'?'rgba(232,112,96,0.12)':'transparent'};color:${e.type==='D'?'var(--red)':'#4A3518'};font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:1px;">↓ D</button>
+      </div>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#B8903A;font-family:var(--mono);margin-bottom:8px;">Outcome</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px;">
+        <button onclick="editSet(${idx},'outcome','caught')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid ${e.outcome==='caught'?'var(--green)':'#2A1E08'};background:${e.outcome==='caught'?'rgba(143,212,107,0.12)':'transparent'};color:${e.outcome==='caught'?'var(--green)':'#4A3518'};font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:1px;">✓ Caught</button>
+        <button onclick="editSet(${idx},'outcome','acted')" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid ${e.outcome==='acted'?'var(--red)':'#2A1E08'};background:${e.outcome==='acted'?'rgba(232,112,96,0.12)':'transparent'};color:${e.outcome==='acted'?'var(--red)':'#4A3518'};font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:1px;">✗ Acted</button>
+        <button onclick="editSet(${idx},'outcome',null)" style="flex:1;padding:9px;border-radius:8px;border:1.5px solid ${!e.outcome?'#B8903A':'#2A1E08'};background:transparent;color:${!e.outcome?'#B8903A':'#4A3518'};font-family:var(--mono);font-size:11px;cursor:pointer;letter-spacing:1px;">Pending</button>
+      </div>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#B8903A;font-family:var(--mono);margin-bottom:8px;">Trigger</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+        ${TRIGS.map(t=>`<button onclick="editSet(${idx},'trigger','${t}')" style="padding:6px 12px;border-radius:16px;border:1px solid ${e.trigger===t?'#B8903A':'#2A1E08'};background:${e.trigger===t?'rgba(255,212,107,0.12)':'transparent'};color:${e.trigger===t?'#E8B84B':'#4A3518'};font-family:var(--serif);font-size:13px;cursor:pointer;">${t}</button>`).join('')}
+      </div>
+
+      <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#B8903A;font-family:var(--mono);margin-bottom:8px;">Intensity</div>
+      <div style="display:flex;gap:8px;margin-bottom:20px;">
+        ${INTS.map(i=>`<button onclick="editSet(${idx},'intensity','${i}')" style="flex:1;padding:8px;border-radius:8px;border:1px solid ${e.intensity===i?'#B8903A':'#2A1E08'};background:${e.intensity===i?'rgba(255,212,107,0.1)':'transparent'};color:${e.intensity===i?'#E8B84B':'#4A3518'};font-family:var(--serif);font-size:13px;cursor:pointer;">${i}</button>`).join('')}
+      </div>
+
+      <button onclick="closeEditModal()" style="width:100%;padding:13px;background:linear-gradient(135deg,#B8903A,#E8B84B);border:none;border-radius:8px;color:#0F0C06;font-family:var(--mono);font-size:12px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;font-weight:700;">Done</button>
+    </div>`;
+
+  overlay.addEventListener('click', e=>{ if(e.target===overlay)closeEditModal(); });
+  document.body.appendChild(overlay);
+}
+
+function editSet(idx, field, value){
+  logs[idx][field]=value;
+  localStorage.setItem('umami_os_v3',JSON.stringify(logs));
+  updateMetrics();
+  updatePatterns();
+  // Re-render modal with updated state
+  closeEditModal();
+  openEditModal(idx);
+}
+
+function closeEditModal(){
+  const m=document.getElementById('edit-modal');
+  if(m)m.remove();
+}
+
+// ── EXPORT ──
+function copyToNotes(){
+  const tl=todayLogs();
+  const c=tl.filter(l=>l.type==='C').length;
+  const d=tl.filter(l=>l.type==='D').length;
+  const q=tl.filter(l=>l.type==='Q').length;
+  const pending=tl.filter(l=>l.type==='D'&&!l.outcome).length;
+  const ds=new Date().toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  const lines=[
+    `MIND OS — ${ds}`,
+    `Phase: ${phase}  |  C:${c}  D:${d}  Quick:${q}  Pending:${pending}`,``,
+    ...tl.map(e=>{
+      const m=[e.trigger,e.urge,e.outcome,e.intensity].filter(Boolean).join(' · ');
+      return `${e.time}  [${e.type}]  "${e.thought}"  (${e.phase})${m?' — '+m:''}`;
+    }),``,`---`
+  ];
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>{
+    const b=document.getElementById('copy-btn');
+    b.textContent='Copied ✓';b.classList.add('done');
+    setTimeout(()=>{b.textContent='Copy Log';b.classList.remove('done');},2000);
+  });
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+init();
+</script>
+</body>
+</html>
